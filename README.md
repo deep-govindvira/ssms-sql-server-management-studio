@@ -15,6 +15,23 @@ BEGIN
 END
 ';
 ```
+
+# Search table name in all databases.  
+
+```
+EXEC sp_MSforeachdb '
+IF ''?'' NOT IN (''master'',''model'',''msdb'',''tempdb'')
+BEGIN
+    USE [?];
+    SELECT
+        ''?'' AS DatabaseName,
+        SCHEMA_NAME(schema_id) AS SchemaName,
+        name AS TableName
+    FROM sys.tables
+    WHERE name LIKE ''%Cust%'';
+END';
+```
+
 # Search column name in all databases.
 
 ```sql
