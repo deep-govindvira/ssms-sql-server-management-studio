@@ -74,3 +74,49 @@ ORDER BY DatabaseName, SchemaName, TableName;
 DROP TABLE #Results;
 ```
 
+# Table-Valued Parameter TVP
+
+```cs
+public class CarType
+{
+    // Sequence must match SQL Type definition perfectly
+    public int CarID { get; set; }
+    public string CarName { get; set; }
+}
+
+public class CarDto
+{
+    public int CarID { get; set; }
+    public string CarName { get; set; }
+}
+
+List<CarType> carList;
+DynamicParameters parameters = new DynamicParameters();
+parameters.AddTable("@Cars", "[dbo].[CarType]", carList);
+List<CarDto> response = new List<VerifyUserDeleteResponseModel>();    
+var insertedCars = DatabaseIO.Query<CarDto>("[dbo].[InsertCars]", parameters);
+```
+
+```sql
+-- 1. Create the Custom Table Type
+CREATE TYPE [dbo].[CarType] AS TABLE (
+    [CarID] INT NOT NULL,
+    [CarName] NVARCHAR(50) NOT NULL
+);
+
+-- 2. Create the Stored Procedure using the Table Type
+
+DROP PROCEDURE IF EXISTS [dbo].[InsertCars]
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[InsertCars]
+    @Cars [dbo].[CarType] READONLY
+AS
+BEGIN
+    INSERT INTO [dbo].[ActiveInventory] (Id, ModelName)
+    OUTPUT INSERTED.Id AS CarID, INSERTED.ModelName AS CarName
+    SELECT [CarID], [CarName] FROM @Cars;
+END;
+
+
+```
